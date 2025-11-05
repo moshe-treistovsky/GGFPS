@@ -3,12 +3,10 @@ from __future__ import annotations
 from typing import List, Optional
 import numpy as np
 
-
-
 def ensure_rng(random_state: Optional[int]) -> np.random.Generator:
     return np.random.default_rng(random_state)
 
-def adaptive_fps_sweep(
+def adaptive_ggfps_sweep(
     gradients,
     D,
     n_indices: int,
