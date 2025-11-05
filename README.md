@@ -1,4 +1,4 @@
-# OQML-GNN: Pooled MACE descriptors + FPS / GGFPS sampling
+# GGFPS for KRR and MACE
 
 This repository contains:
 - `gen_MACE_desc_DMAT.py`: compute pooled MACE descriptors per frame and a full pairwise distance matrix.
