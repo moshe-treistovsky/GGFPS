@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 from ase.io import read
 from ase.io.extxyz import write_extxyz
+from GGFPS import adaptive_ggfps_sweep
 
 # your existing FPS implementation
 def fps_distance_matrix(D, K, init_idx=None, random_state=None):
@@ -18,73 +19,6 @@ def fps_distance_matrix(D, K, init_idx=None, random_state=None):
         selected.append(next_idx)
         min_dists = np.minimum(min_dists, D[next_idx])
     return selected
-
-def adaptive_fps_sweep(gradients, D, n_indices, gamma_start=-1.0, gamma_end=1.0, random_state=None):
-    """
-    Adaptive Furthest Point Sampling with a shifting gradient bias from low to high gradient norms.
-    
-    Parameters:
-    - gradients: np.ndarray, shape (n_samples,)
-        The gradient norms associated with each point.
-    - D: np.ndarray, shape (n_samples, n_samples)
-        The precomputed distance matrix between points.
-    - n_indices: int
-        The number of points to select.
-    - gamma_start: float
-        The initial gamma value (negative to bias towards low gradients).
-    - gamma_end: float
-        The final gamma value (positive to bias towards high gradients).
-    - random_state: int or None
-        Seed for random number generator.
-        
-    Returns:
-    - selected_indices: np.ndarray, shape (n_indices,)
-        Indices of the selected points.
-    """
-    if random_state is not None:
-        np.random.seed(random_state)
-    n_samples = D.shape[0]
-    selected_indices = []
-    unselected_indices = list(range(n_samples))
-    
-    # Initialize min distances to infinity
-    min_distances = np.full(n_samples, np.inf)
-    
-    # Compute initial gamma
-    gamma_i = gamma_start  # At iteration i=0
-    
-    # Compute selection probabilities proportional to gradients ** gamma_i
-    # Avoid zero gradients by adding a small epsilon
-    epsilon = 1e-8
-    probabilities = (gradients + epsilon) ** gamma_i
-    probabilities /= probabilities.sum()
-    
-    # Select the initial index randomly based on probabilities
-    initial_index = np.random.choice(n_samples, p=probabilities)
-    
-    selected_indices.append(initial_index)
-    unselected_indices.remove(initial_index)
-    
-    # Initialize min distances with distances from the initial point
-    min_distances = np.minimum(min_distances, D[initial_index])
-    
-    for i in range(1, n_indices):
-        # Compute gamma_i for current iteration
-        gamma_i = gamma_start + (gamma_end - gamma_start) * (i / (n_indices - 1))
-        
-        # Compute weighted scores
-        # Avoid zero gradients by adding a small epsilon
-        weighted_scores = ((gradients[unselected_indices] + epsilon) ** gamma_i) * min_distances[unselected_indices]
-        
-        # Select the point with the maximum weighted score
-        next_index = unselected_indices[np.argmax(weighted_scores)]
-        selected_indices.append(next_index)
-        unselected_indices.remove(next_index)
-        
-        # Update min distances
-        min_distances[unselected_indices] = np.minimum(min_distances[unselected_indices], D[next_index, unselected_indices])
-        
-    return np.array(selected_indices)
 
 # uniform random sampling
 def urs(N, K, random_state=None):
@@ -146,7 +80,7 @@ if __name__ == '__main__':
 
             for gb_i, gb in enumerate(grad_biases):
 
-                ggfps_idx = adaptive_fps_sweep(rms_force_per_atom, 
+                ggfps_idx = adaptive_ggfps_sweep(rms_force_per_atom, 
                                                D, 
                                                K, 
                                                -1*gb, 
