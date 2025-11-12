@@ -12,7 +12,7 @@ import pandas as pd
 
 from qmllib.kernels import distance
 from qmllib.representations import generate_fchl19
-from oqml import CoreSetOptimizationGGFPS
+from src.ggfps_gnn.KRR_GGFPS import CoreSetOptimizationGGFPS
 
 
 def gen_flat_fchl(nuccs, coords):
